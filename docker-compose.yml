@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    container_name: pdf_backend_dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/home/pdf_worker/app:z
+    environment:
+      - DEBUG=1
+      - PYTHONUNBUFFERED=1
+    networks:
+      - pdf_network
+
+networks:
+  pdf_network:
+    driver: bridge
