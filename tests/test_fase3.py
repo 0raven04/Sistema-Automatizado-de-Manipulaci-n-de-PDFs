@@ -1,58 +1,10 @@
 import io
 import json
 
-import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
-from pypdf import PdfReader, PdfWriter
+from pypdf import PdfReader
 
-
-PDF_MINIMO = (
-	b"%PDF-1.4\n"
-	b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-	b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
-	b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R>>endobj\n"
-	b"xref\n0 4\n"
-	b"0000000000 65535 f\n"
-	b"0000000009 00000 n\n"
-	b"0000000058 00000 n\n"
-	b"0000000115 00000 n\n"
-	b"trailer<</Size 4/Root 1 0 R>>\n"
-	b"startxref\n190\n%%EOF"
-)
-
-
-def _contenido_respuesta(response):
-	if getattr(response, "streaming", False):
-		return b"".join(response.streaming_content)
-	return response.content
-
-
-def _build_pdf_paginas(cantidad: int) -> bytes:
-	base = PdfReader(io.BytesIO(PDF_MINIMO))
-	writer = PdfWriter()
-	for _ in range(cantidad):
-		writer.add_page(base.pages[0])
-	output = io.BytesIO()
-	writer.write(output)
-	return output.getvalue()
-
-
-@pytest.fixture
-def pdf_valido():
-	return SimpleUploadedFile(
-		"test.pdf",
-		PDF_MINIMO,
-		content_type="application/pdf",
-	)
-
-
-@pytest.fixture
-def pdf_dos_paginas():
-	return SimpleUploadedFile(
-		"dos_paginas.pdf",
-		_build_pdf_paginas(2),
-		content_type="application/pdf",
-	)
+from .conftest import PDF_MINIMO, _contenido_respuesta
 
 
 def test_merge_exitoso(client, pdf_valido):
@@ -136,3 +88,37 @@ def test_generate_json_invalido(client):
 
 	assert response.status_code == 400
 	assert "JSON válido" in response.json()["error"]
+
+#test_split_rango_fuera_de_limites — paginas="1-10" en pdf de 2 páginas
+
+def test_split_rango_fuera_de_limites(client, pdf_dos_paginas):
+	response = client.post(
+		"/api/split/",
+		data={"file": pdf_dos_paginas, "paginas": "1-10"},
+	)
+
+	assert response.status_code == 400
+	assert "fuera de límites" in response.json()["error"]
+
+#test_rotate_angulo_invalido — angulo="45"
+
+def test_rotate_angulo_invalido(client, pdf_valido):
+	response = client.post(
+		"/api/rotate/",
+		data={"file": pdf_valido, "angulo": "45"},
+	)
+
+	assert response.status_code == 400
+	assert "Ángulo inválido" in response.json()["error"]
+
+#test_watermark_sin_texto — sin campo texto
+
+
+def test_watermark_sin_texto(client, pdf_valido):
+	response = client.post(
+		"/api/watermark/",
+		data={"file": pdf_valido, "opacidad": "0.3"},
+	)
+
+	assert response.status_code == 400
+	assert "Debes enviar el texto" in response.json()["error"]

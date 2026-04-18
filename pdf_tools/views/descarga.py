@@ -3,13 +3,7 @@ from django.views import View
 from django.core.exceptions import ValidationError
 from django.http import StreamingHttpResponse, JsonResponse
 from ..services.memory import leer_subida 
-
-def _iterar_buffer(buffer, chunk_size=8192):
-    while True:
-        chunk = buffer.read(chunk_size)
-        if not chunk:
-            break
-        yield chunk
+from .utils import _iterar_buffer
 
 class DescargarPDFView(View):
     def post(self, request):

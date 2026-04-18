@@ -166,11 +166,13 @@ def watermark_pdf(
 	writer = PdfWriter()
 
 	for page in reader.pages:
+		writer.add_page(page)
+
+	for page in writer.pages:
 		width = float(page.mediabox.width)
 		height = float(page.mediabox.height)
 		wm_page = _build_watermark_page(texto.strip(), opacidad, width, height)
 		page.merge_page(wm_page)
-		writer.add_page(page)
 
 	return _to_output_buffer(writer)
 

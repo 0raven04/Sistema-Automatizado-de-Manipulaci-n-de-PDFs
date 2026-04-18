@@ -12,7 +12,10 @@ from django.core.exceptions import ValidationError
 
 MIME_PERMITIDO = "application/pdf"
 CONTENT_TYPES_PERMITIDOS = {"application/pdf", "binary/octet-stream"}
-MAX_BYTES_SUBIDA = int(getattr(settings, "MAX_UPLOAD_BYTES_MB", 20)) * 1024 * 1024
+
+
+def _max_bytes_subida() -> int:
+    return int(getattr(settings, "MAX_UPLOAD_BYTES_MB", 20)) * 1024 * 1024
 
 
 
@@ -70,8 +73,9 @@ def leer_subida(archivo_subido) -> io.BytesIO:
         )
     
     # Validar el tamaño del archivo para que no supere el límite permitido
-    if archivo_subido.size > MAX_BYTES_SUBIDA:
-        max_mb = MAX_BYTES_SUBIDA // (1024 * 1024)
+    max_bytes_subida = _max_bytes_subida()
+    if archivo_subido.size > max_bytes_subida:
+        max_mb = max_bytes_subida // (1024 * 1024)
         raise ValidationError(
             f"El archivo supera el límite de {max_mb} MB "
             f"({archivo_subido.size / 1024 / 1024:.1f} MB recibidos)."

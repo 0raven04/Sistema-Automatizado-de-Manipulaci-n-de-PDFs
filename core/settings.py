@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+from decouple import Csv, config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,12 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9zldbltc6e-qcl0@$vzb^ck*aq$_-)1%7m$773==9^90pwzdxh'
+SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-this-in-production")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", cast=bool, default=True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv(), default="localhost,127.0.0.1")
 
 
 # Application definition
@@ -38,6 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "pdf_tools",
+    "rest_framework",
+    "drf_spectacular",
+
 ]
 
 MIDDLEWARE = [
@@ -48,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'pdf_tools.middleware.SecurityHeadersMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -117,14 +123,39 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# --- Seguridad HTTP ---
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+SECURE_HSTS_SECONDS = 0  # cambiar a 31536000 en producción
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom settings
-# Define el tamaño máximo de subida en megabytes
-MAX_UPLOAD_SIZE_MB = 20
-FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
-DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
-# Define el tamaño máximo de subida en megabytes para imágenes
+# Compatibilidad: acepta MAX_UPLOAD_BYTES_MB (preferido) o MAX_UPLOAD_SIZE_MB.
+MAX_UPLOAD_BYTES_MB = config(
+    "MAX_UPLOAD_BYTES_MB",
+    cast=int,
+    default=config("MAX_UPLOAD_SIZE_MB", cast=int, default=20),
+)
+FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_BYTES_MB * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_BYTES_MB * 1024 * 1024
+
+RATE_LIMIT = f"{config('RATE_LIMIT_PER_MINUTE', default=10, cast=int)}/m"
+RATELIMIT_VIEW = "pdf_tools.views.utils.ratelimited_error"
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "PDF Tool API",
+    "DESCRIPTION": "API REST para manipulación de archivos PDF en memoria.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "PREPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.preprocess_exclude_path_format",
+    ],
+}

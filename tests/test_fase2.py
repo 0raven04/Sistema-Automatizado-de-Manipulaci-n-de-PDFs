@@ -4,32 +4,7 @@ from pathlib import Path
 from django.core.files.uploadedfile import SimpleUploadedFile
 from pypdf import PdfReader
 
-# PDF mínimo válido definido como constante — sin archivos en disco
-PDF_MINIMO = (
-    b"%PDF-1.4\n"
-    b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
-    b"3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R>>endobj\n"
-    b"xref\n0 4\n" 
-    b"0000000000 65535 f\n"
-    b"0000000009 00000 n\n"
-    b"0000000058 00000 n\n"
-    b"0000000115 00000 n\n"
-    b"trailer<</Size 4/Root 1 0 R>>\n"
-    b"startxref\n190\n%%EOF"
-)
-
-# Fixture reutilizable para no repetir SimpleUploadedFile en cada test.
-@pytest.fixture
-def pdf_valido():
-    return SimpleUploadedFile("test.pdf", PDF_MINIMO, content_type="application/pdf")
-
-
-def _obtener_contenido_respuesta(response):
-    if getattr(response, "streaming", False):
-        return b"".join(response.streaming_content)
-    return response.content
-
+from .conftest import _contenido_respuesta
 
 #Test 1 - upload exitoso
 """
@@ -103,7 +78,7 @@ def test_download_exitoso(client, pdf_valido):
     assert response.headers["Content-Type"] == "application/pdf"
     assert "attachment" in response.headers.get("Content-Disposition", "")
 
-    contenido = _obtener_contenido_respuesta(response)
+    contenido = _contenido_respuesta(response)
     reader = PdfReader(io.BytesIO(contenido))
     assert len(reader.pages) == 1
 

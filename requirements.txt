@@ -3,3 +3,5 @@ pypdf
 reportlab
 python-decouple
 gunicorn
+django-ratelimit
+drf-spectacular

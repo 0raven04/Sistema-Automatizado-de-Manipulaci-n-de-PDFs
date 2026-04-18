@@ -15,9 +15,27 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import path, include
+from django_ratelimit.exceptions import Ratelimited
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+
+def custom_permission_denied(request, exception):
+    if isinstance(exception, Ratelimited):
+        return JsonResponse(
+            {"error": "Demasiadas solicitudes. Intenta nuevamente en un minuto."},
+            status=429,
+        )
+    return JsonResponse({"error": "Acceso denegado."}, status=403)
+
+
+handler403 = "core.urls.custom_permission_denied"
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("pdf_tools.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]
