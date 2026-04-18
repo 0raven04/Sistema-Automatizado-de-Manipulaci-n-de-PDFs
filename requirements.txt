@@ -1,5 +1,5 @@
 django==5.2
-PyPDF2
+pypdf
 reportlab
 python-decouple
 gunicorn
