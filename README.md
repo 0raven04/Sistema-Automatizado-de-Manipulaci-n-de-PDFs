@@ -254,34 +254,33 @@ curl -X POST http://localhost/api/generate/ \
 ## Estructura del Proyecto
 
 ```
-pdf-tool/
-├── pdf_tools/                  # App principal Django
-│   ├── views/
-│   │   ├── upload.py           # POST /upload — validación MIME y tamaño
-│   │   ├── download.py         # GET /download — StreamingHttpResponse
-│   │   ├── merge.py
-│   │   ├── split.py
-│   │   ├── rotate.py
-│   │   ├── watermark.py
-│   │   └── generate.py
-│   ├── services/
-│   │   ├── memory.py           # Pipeline BytesIO — núcleo del sistema
-│   │   └── pdf_operations.py   # Funciones puras: reciben y devuelven BytesIO
-│   └── utils/
-│       └── sanitize.py         # UUID interno, validación de rutas
-├── tests/
-│   ├── fixtures/               # PDFs reales para tests (1 pág, multipágina, con imágenes)
-│   ├── test_services.py        # Tests unitarios de pdf_operations.py
-│   └── test_endpoints.py       # Tests de integración por endpoint
-├── config/
-│   └── settings.py
-├── nginx/
-│   └── default.conf            # Configuración Nginx para producción
-├── docker-compose.yml          # Stack completo: app (Gunicorn) + proxy (Nginx)
-├── Dockerfile
-├── requirements.txt
-├── .env.example
-└── README.md
+pdf_tools/
+├── middleware.py
+├── urls.py
+├── services/
+│   ├── memory.py
+│   └── pdf_operations.py
+├── utils/
+│   └── sanitize.py
+└── views/
+    ├── utils.py
+    ├── subida.py
+    ├── descarga.py
+    ├── merge.py
+    ├── split.py
+    ├── rotate.py
+    ├── watermark.py
+    └── generate.py
+tests/
+├── conftest.py
+├── test_fase2.py
+├── test_fase3.py
+└── test_fase4.py
+nginx/
+└── default.conf
+openapi.yaml
+docker-compose.yml
+Dockerfile
 ```
 
 ---
@@ -375,9 +374,9 @@ path("api/compress/", CompressView.as_view(), name="compress"),
 
 - [x] Fase 1 — Configuración del entorno y estructura del proyecto
 - [x] Fase 2 — Pipeline BytesIO y módulo de memoria
-- [ ] Fase 3 — Cinco operaciones PDF (merge, split, rotate, watermark, generate)
-- [ ] Fase 4 — Seguridad y hardening (non-root, rate limiting, headers)
-- [ ] Fase 5 — Tests completos, documentación OpenAPI y stack de producción
+- [x] Fase 3 — Cinco operaciones PDF (merge, split, rotate, watermark, generate)
+- [x] Fase 4 — Seguridad y hardening (non-root, rate limiting, headers)
+- [x] Fase 5 — Tests completos, documentación OpenAPI y stack de producción
 
 ---
 
