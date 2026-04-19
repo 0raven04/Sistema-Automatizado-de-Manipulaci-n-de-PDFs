@@ -1,32 +1,25 @@
-
-
-
-
-
 from django.http import JsonResponse
 from django_ratelimit.exceptions import Ratelimited
 
 
 class SecurityHeadersMiddleware:
-    """
-    Middleware to set security-related HTTP headers.
-    """
-
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        try:
-            response = self.get_response(request)
-        except Ratelimited:
-            response = JsonResponse(
-                {"error": "Demasiadas solicitudes. Intenta nuevamente en un minuto."},
-                status=429,
-            )
+        response = self.get_response(request)
 
-        # Set security headers
-        response["Content-Security-Policy"] = "default-src 'none'"
+        # Swagger UI necesita cargar assets externos
+        if request.path.startswith("/api/docs") or request.path.startswith("/api/schema"):
+            response["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+                "img-src 'self' data:;"
+            )
+        else:
+            response["Content-Security-Policy"] = "default-src 'none'"
+
         response["X-Content-Type-Options"] = "nosniff"
         response["X-Frame-Options"] = "DENY"
-
         return response

@@ -19,6 +19,19 @@ from django.http import JsonResponse
 from django.urls import path, include
 from django_ratelimit.exceptions import Ratelimited
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from django.http import HttpResponse
+import yaml, os
+
+
+
+
+
+
+
+def openapi_yaml(request):
+    path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "openapi.yaml")
+    content = open(path).read()
+    return HttpResponse(content, content_type="application/yaml")
 
 
 def custom_permission_denied(request, exception):
@@ -36,6 +49,6 @@ handler403 = "core.urls.custom_permission_denied"
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("pdf_tools.urls")),
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/schema/", openapi_yaml, name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]
